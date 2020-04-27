@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% load staticfiles %}
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="{% static 'css/font.css' %}">
+    <link rel="stylesheet" href="{% static 'css/in-line.css' %}">
+    <link rel="stylesheet" href="{% static 'css/xadmin.css' %}">
+    <link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>
+    <script src="{% static 'jquery-3.4.1.min.js' %}"></script>
+    <!--        <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js">-->
+    <script src="{% static 'lib/layui/layui.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.2.1-rc1/echarts.min.js"></script>
+    <!--        <script src="https://www.layuicdn.com/layui/layui.js"></script>-->
+    <script>
+            var TopicInfo = {
+                bar_info: {{ topic_data|safe }},
+                intensity_info: {{ intensity_cnt|safe }},
+                neutral_info: {{ neutral|safe }},
+                positive_info: {{ positive|safe }},
+                negative_info: {{ negative|safe }},
+                low_info: {{ low|safe }},
+                mid_info: {{ mid|safe }},
+                high_info: {{ high|safe }},
+            }
+
+    </script>
+
+</head>
+
+<body>
+
+
+<div class="x-body layui-anim layui-anim-up">
+    <blockquote class="layui-elem-quote">欢迎二级咨询师：
+        <span class="x-red"></span>！当前时间:20120-02-23 20:50:53
+    </blockquote>
+    <fieldset class="layui-elem-field">
+        <legend>范围选择</legend>
+        <br/>
+        <form class="layui-form" action="{% url 'form_post' %}" method="post">
+            {% csrf_token %}
+            <div class="layui-form-item" style="width:250px;">
+                <label class="layui-form-label">主题</label>
+                <div class="layui-input-block">
+                    <select name="topic" lay-filter="aihao">
+                        <option value="0">所有</option>
+                        <option value="1">心理方面</option>
+                        <option value="2">学业方面</option>
+                        <option value="3">职业发展</option>
+                        <option value="4">恋爱关系</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item" style="width:250px;">
+                <label class="layui-form-label">来源</label>
+                <div class="layui-input-block">
+                    <select name="source" lay-filter="aihao">
+                        <option value="0">所有</option>
+                        <option value="1">bbs</option>
+                        <option value="2">树洞</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item" style="width:250px;">
+                <label class="layui-form-label">情感强度</label>
+                <div class="layui-input-block">
+                    <select name="intensity" lay-filter="aihao">
+                        <option value="0">所有</option>
+                        <option value="1">低</option>
+                        <option value="2">中</option>
+                        <option value="3">高</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item" style="width:250px;">
+                <label class="layui-form-label">情感极性</label>
+                <div class="layui-input-block">
+                    <select name="polarity" lay-filter="aihao">
+                        <option value="0">所有</option>
+                        <option value="1">中性</option>
+                        <option value="2">正向</option>
+                        <option value="3">负向</option>
+                    </select>
+                </div>
+            </div>
+
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">日期选择</label>
+                <input type="text" name="start_time" required lay-verify="required" placeholder="开始时间"
+                       autocomplete="off" class="layui-input" id="test1" style="width:100px;display:inline;">
+                <input type="text" name="end_time" required lay-verify="required" placeholder="结束时间"
+                       autocomplete="off" class="layui-input" id="test2" style="width:100px;display:inline;">
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button type="submit" class="layui-btn" lay-submit="" lay-filter="demo1">立即提交</button>
+                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </form>
+
+
+    </fieldset>
+
+    <fieldset class="layui-elem-field">
+        <legend>信息展示</legend>
+        <br/>
+
+        <div id="polarity" style="width: 600px;height:400px;float:left;"></div>
+        <div id="main_intensity" style="width: 600px;height:400px;float:left;"></div>
+        <div id="main3" style="width: 600px;height:400px;float:left;"></div>
+        <div id="main" style="width: 600px;height:400px;float:left;"></div>
+
+
+    </fieldset>
+    <fieldset class="layui-elem-field">
+            <legend>高危个体展示</legend>
+            <table class="layui-hide" id="test"></table>
+    </fieldset>
+
+    <!-- </script> -->
+       
+    </div>
+
+
+  
+    <script>
+        layui.use('table', function(){
+          var table = layui.table;
+          table.render({
+            elem: '#test',
+            url:'show_data',
+            cellMinWidth: 200, //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            cols: [[
+               {field:'pid', width:100, title: '发帖序号'}
+              ,{field:'text', width:100, title: '文本'}
+              ,{field:'title', width:100, title: '标题'}
+              ,{field:'polarity', width:100, title: '极性'}
+              ,{field:'intensity', width:100, title: '强度'}
+              ,{field:'topic', width:100, title: '主题'}
+              
+            ]]
+            ,page: true
+            ,parseData: function(res){ //将原始数据解析成 table 组件所规定的数据
+              return {
+                "code": res.code,
+                "msg": res.msg,
+                "total": res.count,
+                "data": res.data //解析数据列表
+      };
+    }
+          });
+        });
+
+    </script>
+    <script>
+layui.use('laydate', function(){
+  var laydate = layui.laydate;
+
+  //执行一个laydate实例
+  laydate.render({
+    elem: '#test1' //指定元素
+  });
+});
+
+    </script>
+    <script>
+layui.use('laydate', function(){
+  var laydate = layui.laydate;
+
+  //执行一个laydate实例
+  laydate.render({
+    elem: '#test2' //指定元素
+  });
+});
+
+    </script>
+    <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        // var myChart = echarts.init(document.getElementById('main'));
+        // console.log(TopicInfo.time_info);
+
+        // // 指定图表的配置项和数据
+        // var option = {
+        //     title: {
+        //         text: '相关话题'
+        //     },
+        //     tooltip: {},
+        //     xAxis: {
+        //         data: ["职业发展","学业方面","心理方面","恋爱关系",]
+        //     },
+        //     yAxis: {},
+        //     series: [{
+        //         name: '销量',
+        //         type: 'bar',
+        //         data: TopicInfo.bar_info
+        //     }]
+        // };
+        var myChart = echarts.init(document.getElementById('main'));
+
+        myChart.setOption({
+            title: {
+                text: '相关极性分布饼图'
+            },
+            series : [
+                {
+                    name: '话题分类',
+                    type: 'pie',    // 设置图表类型为饼图
+                    radius: '55%',  // 饼图的半径，外半径为可视区尺寸（容器高宽中较小一项）的 55% 长度。
+                    data:[          // 数据数组，name 为数据项名称，value 为数据项值
+                        {value:TopicInfo.intensity_info[0], name:'低'},
+                        {value:TopicInfo.intensity_info[1], name:'中'},
+                        {value:TopicInfo.intensity_info[2], name:'高'},
+                        // {value:TopicInfo.bar_info[3], name:'恋爱关系'},
+                    ]
+                }
+            ]
+        })
+
+        // 使用刚指定的配置项和数据显示图表。
+        myChart.setOption(option);
+
+    </script>
+
+    <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('polarity'));
+
+        // 指定图表的配置项和数据
+        var option = {
+            title: {
+                text: '情感极性趋势线'
+            },
+            tooltip: {},
+            legend: {
+                data:['中性','正向','负向']
+            },
+            xAxis: {
+                type: 'time'
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [{
+                name: '中性',
+                type: 'line',
+                label: '中性',
+                itemStyle : {
+                                normal : {
+                                    color:'#f0f025',
+                                    lineStyle:{
+                                        color:'#f0f025'
+                                    }
+                                }
+                            },
+                data: TopicInfo.neutral_info
+            },{
+                name: '正向',
+                type: 'line',
+                label: '正向',
+                itemStyle : {
+                                normal : {
+                                    color:'#00FF00',
+                                    lineStyle:{
+                                        color:'#00FF00'
+                                    }
+                                }
+                            },
+                data: TopicInfo.positive_info
+
+            },{
+                name: '负向',
+                type: 'line',
+                label: '负向',
+                itemStyle : {
+                                normal : {
+                                    color:'#FF0059',
+                                    lineStyle:{
+                                        color:'#FF0059'
+                                    }
+                                }
+                            },
+                data: TopicInfo.negative_info
+
+            }]
+        };
+
+        // 使用刚指定的配置项和数据显示图表。
+        myChart.setOption(option);
+
+    </script>
+    <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main_intensity'));
+
+        // 指定图表的配置项和数据
+        var option = {
+            title: {
+                text: '情感强度趋势线'
+            },
+            tooltip: {},
+            legend: {
+                data:['低','中','高']
+            },
+            xAxis: {
+                type: 'time'
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [{
+                name: '低',
+                type: 'line',
+                label: '低',
+                itemStyle : {
+                                normal : {
+                                    color:'#5125f0',
+                                    lineStyle:{
+                                        color:'#5125f0'
+                                    }
+                                }
+                            },
+                data: TopicInfo.low_info
+            },{
+                name: '中',
+                type: 'line',
+                label: '中',
+                itemStyle : {
+                                normal : {
+                                    color:'#db25f0',
+                                    lineStyle:{
+                                        color:'#db25f0'
+                                    }
+                                }
+                            },
+                data: TopicInfo.mid_info
+
+            },{
+                name: '高',
+                type: 'line',
+                label: '高',
+                itemStyle : {
+                                normal : {
+                                    color:'#FF0059',
+                                    lineStyle:{
+                                        color:'#FF0059'
+                                    }
+                                }
+                            },
+                data: TopicInfo.high_info
+            }]
+        };
+
+        // 使用刚指定的配置项和数据显示图表。
+        myChart.setOption(option);
+
+    </script>
+
+    <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main3'));
+
+        myChart.setOption({
+            title: {
+                text: '话题分布饼图'
+            },
+            series : [
+                {
+                    name: '话题分类',
+                    type: 'pie',    // 设置图表类型为饼图
+                    radius: '55%',  // 饼图的半径，外半径为可视区尺寸（容器高宽中较小一项）的 55% 长度。
+                    data:[          // 数据数组，name 为数据项名称，value 为数据项值
+                        {value:TopicInfo.bar_info[0], name:'职业发展'},
+                        {value:TopicInfo.bar_info[1], name:'学业方面'},
+                        {value:TopicInfo.bar_info[2], name:'心理方面'},
+                        {value:TopicInfo.bar_info[3], name:'恋爱关系'},
+                    ]
+                }
+            ]
+        })
+
+    </script>
+</body>
+</html>

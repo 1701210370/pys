@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% load staticfiles %}
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+   <!--  <meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4,initial-scale=0.8,target-densitydpi=low-dpi"/> -->
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="{% static 'css/font.css' %}">
+    <link rel="stylesheet" href="{% static 'css/in-line.css' %}">
+    <link rel="stylesheet" href="{% static 'css/xadmin.css' %}">
+    <link rel="stylesheet" type="text/css" href="https://www.layuicdn.com/layui/css/layui.css"/>
+    <script src="{% static 'jquery-3.4.1.min.js' %}"></script>
+    <!--        <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js">-->
+    <script src="{% static 'lib/layui/layui.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.2.1-rc1/echarts.min.js"></script>
+    <!--        <script src="https://www.layuicdn.com/layui/layui.js"></script>-->
+    <script>
+            // var Info = {
+            //     trend:{{ trend|safe }},
+            //     topic: {{ topic_data|safe }},
+            // };
+            var time = 1
+
+    </script>
+
+</head>
+
+<body>
+
+
+<div class="x-body layui-anim layui-anim-up">
+    <blockquote class="layui-elem-quote">欢迎咨询师：
+        <!-- <span class="x-red"></span>！当前时间:2020-02-23 20:50:53 -->
+    </blockquote>
+    <input type= "hidden" id= "hid1"/>
+    <form class="layui-form">
+            {% csrf_token %}
+       
+            <div class="layui-form-item">
+                <label class="layui-form-label">日期选择</label>
+                <input type="text" name="start_time" required lay-verify="required" placeholder="开始时间"
+                       autocomplete="off" class="layui-input" id="test1" style="width:100px;display:inline;">
+                <input type="text" name="end_time" required lay-verify="required" placeholder="结束时间"
+                       autocomplete="off" class="layui-input" id="test2" style="width:100px;display:inline;">
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <input type="button" class="layui-btn" lay-submit="" value='立即提交' lay-filter="demo1" style="width:100px;display:inline;" onclick="btn_clik()"></input>
+                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                </div>
+            </div>
+    </form>
+
+    <fieldset class="layui-elem-field">
+        <legend>信息展示</legend>
+        <br/>
+
+        <div id="polarity" style="width: 1200px;height:400px;"></div>
+        <div id="topic_pie" style="width: 30%;height:400px;float:left;"></div>
+        <div id='wordCloud' style="width: 50%;height:400px;float:left;" onshow="word_cloud_path"></div>
+
+
+    </fieldset>
+       
+    </div>
+    <script>
+     layui.use('form', function(){
+     var form = layui.form;
+     form.render('select','aihao');
+     //各种基于事件的操作，下面会有进一步介绍
+     //form.render('组件名','lay-filter名')
+     });
+    </script>
+
+
+    <script>
+        layui.use('laydate', function(){
+          var laydate = layui.laydate;
+
+          //执行一个laydate实例
+          laydate.render({
+            elem: '#test1' //指定元素
+          });
+        });
+
+    </script>
+    <script type="text/javascript">
+        var start_time = 1
+        var end_time = 1
+        
+        function assign_trend() {
+            console.log('okokok')
+                
+            var WarningData = [];
+            var TopicInfo = [];
+            var myChart = echarts.init(document.getElementById('polarity'));
+            myChart.setOption({
+                title: {
+                                text: '心理健康趋势图'
+                            },
+                            tooltip: {},
+                            
+                            xAxis: {
+                                data: []
+                            },
+                            yAxis: {
+                                type: 'value'
+                            },
+
+                            series: [{
+                                name: '情感得分',
+
+                                itemStyle : {
+                                                normal : {
+                                                    color:'#FF0059',
+                                                    lineStyle:{
+                                                        color:'#FF0059'
+                                                    }
+                                                }
+                                            },
+                                data: [],
+                                type: 'line',
+                                // symbol:'none',
+                                // smooth: true,
+                                label: '情感得分',
+                                
+                            }]
+
+            });
+            myChart.showLoading();
+            $.ajax({
+                    type: "get",
+                    url: 'default_trend_data',
+                    data: {'time1':start_time, 'time2':end_time},
+                    // async: false,
+                    success: function(data) {
+                        var TrendInfo = data['trend_data'];
+                        var WarningData = data['warning_data'];
+                        var TopicInfo = data['topic_data'];
+
+                        // console.log(WarningData)
+                        // console.log(TopicInfo)
+
+                        // 使用刚指定的配置项和数据显示图表。
+                        myChart.hideLoading();
+                        myChart.setOption({
+                            xAxis: {
+                                type: 'time'
+                            },
+                            tooltip: {
+                                trigger: 'item',
+                                formatter: function(data){
+                                    var start_day = data.data.value[0]
+                                    var show_message = start_day
+                                    $.ajax({
+                                        type: "post",
+                                        url: 'get_topic_data',
+                                        data: {'time': start_day},
+                                        // async: false,
+                                        success: function (argument) {
+                                            // body...
+                                            show_message = argument
+                                            // console.log(show_message[0])
+                                            show_message = show_message.data+'<br/>'
+                                            // return show_message.学业方面
+
+                                        }
+                                    })
+                                    // console.log(show_message)
+                                    return show_message;
+                                }
+
+                            },
+                            series: [{
+                                name: '情感得分',
+
+                                itemStyle : {
+                                                normal : {
+                                                    color:'#FF0059',
+                                                    lineStyle:{
+                                                        color:'#FF0059'
+                                                    }
+                                                }
+                                            },
+                                data: TrendInfo,
+                                type: 'line',
+                                label: '情感得分',
+                                // smooth: true,
+                                markPoint:{
+                                    data: WarningData,
+                                    itemStyle:{
+                                        color: '#4587E7',
+                                    }
+                                }
+                            }]
+                        })
+                        var myChart1 = echarts.init(document.getElementById('topic_pie'));
+                        myChart1.setOption({
+                                    title: {
+                                        text: '主题分布饼图'
+                                    },
+                                    series : [
+                                        {
+                                            name: '话题分类',
+                                            type: 'pie',    // 设置图表类型为饼图
+                                            radius: '55%',  // 饼图的半径，外半径为可视区尺寸（容器高宽中较小一项）的 55% 长度。
+                                            data:[          // 数据数组，name 为数据项名称，value 为数据项值
+                                                {value:TopicInfo['职业发展'], name:'职业发展'},
+                                                {value:TopicInfo['学业方面'], name:'学业方面'},
+                                                {value:TopicInfo['心理方面'], name:'心理方面'},
+                                                {value:TopicInfo['恋爱关系'], name:'恋爱关系'},
+                                                {value:TopicInfo['其他'], name:'其他'}
+                                            ]
+                                        }
+                                    ]
+                                })
+
+
+                        var params = 0
+                        myChart.on('click', function (params) {
+                            // body...
+                            params = params.data.value[0]
+                            
+                        })
+
+
+                        
+                        $.ajax({
+                            type: "get",
+                            url: 'gen_wordcloud_pic',
+                            data: {'time1':start_time, 'time2':end_time},
+                            success: function(data) {
+                                // adres = data['src']
+                                console.log(data)
+                                document.getElementById("wordCloud").innerHTML='<img src="{% static 'images/test1.jpg' %}">';
+                            }
+
+                        })
+                        // document.getElementById('wordCloud').src = adres;
+                    }
+                });
+            
+        };
+     
+        window.onload = assign_trend;
+            // First = First -1
+        
+    </script>
+
+    <script type="text/javascript">
+       
+        function btn_clik() {
+            // body...
+            var start_time = document.getElementById('test1').value;
+            var end_time = document.getElementById('test2').value;
+            var myChart = echarts.init(document.getElementById('polarity'));
+            
+            $.ajax({
+                type: "get",
+                url: 'form_trend_data',
+                data: {'time1': start_time, 'time2': end_time},
+                // async: false,
+                success: function(data) {
+                    TrendInfo = data['trend_data'];
+                    WarningData = data['warning_data'];
+                    TopicInfo = data['topic_data'];
+
+                    myChart.setOption({
+                        title: {
+                                text: '心理健康趋势图'
+                        },
+                        xAxis: {
+                                type: 'time'
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        // tooltip: {
+                        //         trigger: 'item',
+                        //         console.log('ok')
+                        //         formatter: function(data){
+                        //             var start_day = data.data.value[0]
+                        //             var show_message = start_day
+                        //             $.ajax({
+                        //                 type: "post",
+                        //                 url: 'get_topic_data',
+                        //                 data: {'time1': start_time; 'time2': end_time},
+                        //                 // async: false,
+                        //                 success: function (argument) {
+                        //                     // body...
+                        //                     show_message = argument
+                        //                     // console.log(show_message[0])
+                        //                     show_message = show_message.data+'<br/>'
+                        //                     // return show_message.学业方面
+
+                        //                 }
+                        //             })
+                        //             return show_message;
+                        //         }
+
+                        //     },
+                        series: [{
+                                name: '情感得分',
+
+                                itemStyle : {
+                                                normal : {
+                                                    color:'#FF0059',
+                                                    lineStyle:{
+                                                        color:'#FF0059'
+                                                    }
+                                                }
+                                            },
+                                data: TrendInfo,
+                                type: 'line',
+                                label: '情感得分',
+                                // smooth: true,
+                                // markPoint:{
+                                //     data: WarningData,
+                                //     itemStyle:{
+                                //         color: '#4587E7',
+                                //     }
+                                // }
+                            }]
+
+                    })
+                    // myChart.setOption(option);
+                    console.log(TopicInfo)
+                    var myChart1 = echarts.init(document.getElementById('topic_pie'));
+                    myChart1.setOption({
+                                    title: {
+                                        text: '主题分布饼图'
+                                    },
+                                    series : [
+                                        {
+                                            name: '话题分类',
+                                            type: 'pie',    // 设置图表类型为饼图
+                                            radius: '55%',  // 饼图的半径，外半径为可视区尺寸（容器高宽中较小一项）的 55% 长度。
+                                            data:[          // 数据数组，name 为数据项名称，value 为数据项值
+                                                {value:TopicInfo['职业发展'], name:'职业发展'},
+                                                {value:TopicInfo['学业方面'], name:'学业方面'},
+                                                {value:TopicInfo['心理方面'], name:'心理方面'},
+                                                {value:TopicInfo['恋爱关系'], name:'恋爱关系'},
+                                                {value:TopicInfo['其他'], name:'其他'}
+                                            ]
+                                        }
+                                    ]
+                                })
+                    // myChart1.setOption(option);
+                    
+
+                    var params = 0
+                    myChart.on('click', function (params) {
+                        // body...
+                        params = params.data.value[0]
+                        
+                    })
+
+                    $.ajax({
+                            type: "get",
+                            url: 'gen_wordcloud_pic',
+                            data: {'time1':start_time, 'time2':end_time},
+                            success: function(data) {
+                                // adres = data['src']
+                                document.getElementById("wordCloud").innerHTML='<img src="{% static 'images/test1.jpg' %}">';
+                            }
+
+                    })
+
+
+                }
+
+
+            })
+        }
+    </script>
+
+    <script>
+        layui.use('laydate', function(){
+          var laydate = layui.laydate;
+
+          //执行一个laydate实例
+          laydate.render({
+            elem: '#test2' //指定元素
+          });
+        });
+
+    </script>
+<!-- 
+    <script type="text/javascript">
+        
+    </script> -->
+
+    <!-- <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('topic_pie'));
+
+        myChart.setOption({
+            title: {
+                text: '话题分布饼图'
+            },
+            series : [
+                {
+                    name: '话题分类',
+                    type: 'pie',    // 设置图表类型为饼图
+                    radius: '55%',  // 饼图的半径，外半径为可视区尺寸（容器高宽中较小一项）的 55% 长度。
+                    data:[          // 数据数组，name 为数据项名称，value 为数据项值
+                        {value:TopicInfo.bar_info[0], name:'职业发展'},
+                        {value:TopicInfo.bar_info[1], name:'学业方面'},
+                        {value:TopicInfo.bar_info[2], name:'心理方面'},
+                        {value:TopicInfo.bar_info[3], name:'恋爱关系'},
+                    ]
+                }
+            ]
+        })
+
+    </script> -->
+
+    
+</body>
+</html>
